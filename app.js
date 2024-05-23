@@ -57,7 +57,7 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(process.env.NODE_APP_MONGOOSE_URI_KEY)
+  .connect(process.env.NODE_APP_MONGODB_URI_KEY)
   .then((result) => {
     app.listen(8080);
   })

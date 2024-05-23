@@ -14,5 +14,13 @@ router.post(
   feedBackController.createPost
 );
 router.get("/post/:postId", feedBackController.getPost);
+router.put(
+  "/post/:postId",
+  [
+    body("title").trim().isLength({ min: 5 }),
+    body("content").trim().isLength({ min: 5 }),
+  ],
+  feedBackController.updatePost
+);
 
 module.exports = router;
