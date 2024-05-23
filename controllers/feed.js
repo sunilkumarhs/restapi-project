@@ -5,16 +5,28 @@ const fs = require("fs");
 const path = require("path");
 
 exports.getPosts = (req, res, next) => {
+  const page = req.query.page || 1;
+  const postsInPage = 2;
+  let totalPosts;
   Post.find()
+    .countDocuments()
+    .then((count) => {
+      totalPosts = count;
+      return Post.find()
+        .skip((page - 1) * postsInPage)
+        .limit(postsInPage);
+    })
     .then((posts) => {
       if (!posts) {
         const error = new Error("Fetching of posts failed!!");
         error.statusCode = 404;
         throw error;
       }
-      res
-        .status(200)
-        .json({ message: "Fetching of Posts is Successfull!", posts: posts });
+      res.status(200).json({
+        message: "Fetching of Posts is Successfull!",
+        posts: posts,
+        totalItems: totalPosts,
+      });
     })
     .catch((err) => {
       if (!err.statusCode) {
@@ -133,6 +145,29 @@ exports.updatePost = (req, res, next) => {
     });
 };
 
+exports.deletePost = (req, res, next) => {
+  const postId = req.params.postId;
+  Post.findById(postId)
+    .then((post) => {
+      if (!post) {
+        const error = new Error("Post was not found!!");
+        error.statusCode = 404;
+        throw error;
+      }
+      clearImage(post.imageUrl);
+      return Post.deleteOne({ _id: new mongoDb.ObjectId(postId) });
+    })
+    .then(() => {
+      res.status(202).json({ message: "Post deleted successfully!" });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
 const clearImage = (filePath) => {
   filePath = path.join(__dirname, "..", filePath);
   fs.unlink(filePath, (err) => {
@@ -141,3 +176,4 @@ const clearImage = (filePath) => {
     }
   });
 };
+
