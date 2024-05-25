@@ -18,7 +18,7 @@ const userSchema = new Schema({
     type: String,
     default: "I am new to Post!!",
   },
-  post: [{ type: Schema.Types.ObjectId, ref: "POST" }],
+  posts: [{ type: Schema.Types.ObjectId, ref: "POST" }],
 });
 
 module.exports = mongoose.model("User", userSchema);
