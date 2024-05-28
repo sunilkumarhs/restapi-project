@@ -4,6 +4,7 @@ const mongoDb = require("mongodb");
 const fs = require("fs");
 const path = require("path");
 const User = require("../models/user");
+const io = require("../socket");
 
 exports.getPosts = async (req, res, next) => {
   const page = req.query.page || 1;
@@ -12,6 +13,7 @@ exports.getPosts = async (req, res, next) => {
     const totalPosts = await Post.find().countDocuments();
     const posts = await Post.find()
       .populate("creator")
+      .sort({ createdAt: -1 })
       .skip((page - 1) * postsInPage)
       .limit(postsInPage);
     if (!posts) {
@@ -60,6 +62,10 @@ exports.createPost = async (req, res, next) => {
     const user = await User.findById(req.userId);
     user.posts.push(post);
     await user.save();
+    io.getIO().emit("posts", {
+      action: "create",
+      post: { ...post._doc, creator: { _id: user._id, name: user.name } },
+    });
     res.status(201).json({
       message: "Post created successfully!",
       post: post,
@@ -133,6 +139,10 @@ exports.updatePost = async (req, res, next) => {
     post.imageUrl = imageUrl;
     const result = await post.save();
     const user = await User.findById(req.userId);
+    io.getIO().emit("posts", {
+      action: "update",
+      post: { ...post._doc, creator: { _id: user._id, name: user.name } },
+    });
     res.status(200).json({
       message: "Post updated successfully!",
       post: result,
@@ -165,6 +175,10 @@ exports.deletePost = async (req, res, next) => {
     const user = await User.findById(req.userId);
     user.posts.pull(postId);
     await user.save();
+    io.getIO().emit("posts", {
+      action: "delete",
+      post: post,
+    });
     res.status(202).json({ message: "Post deleted successfully!" });
   } catch (err) {
     if (!err.statusCode) {

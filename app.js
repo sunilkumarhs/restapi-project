@@ -7,6 +7,8 @@ const dotenv = require("dotenv");
 const path = require("path");
 const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
+const { Socket } = require("dgram");
+const { init } = require("./models/user");
 
 dotenv.config();
 
@@ -61,6 +63,10 @@ app.use((error, req, res, next) => {
 mongoose
   .connect(process.env.NODE_APP_MONGODB_URI_KEY)
   .then((result) => {
-    app.listen(8080);
+    const server = app.listen(8080);
+    const io = require("./socket").init(server);
+    io.on("connection", (socket) => {
+      console.log("Client Connected!");
+    });
   })
   .catch((err) => console.log(err));
