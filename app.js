@@ -1,14 +1,15 @@
 const express = require("express");
-const feedRoutes = require("./routes/feed");
-const authRoutes = require("./routes/auth");
+// const feedRoutes = require("./routes/feed");
+// const authRoutes = require("./routes/auth");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const path = require("path");
 const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
-const { Socket } = require("dgram");
-const { init } = require("./models/user");
+const {createHandler} = require("graphql-http/lib/use/express");
+const graphqlSchema = require("./graphql/schema");
+const graphqlResolver = require("./graphql/resolver");
 
 dotenv.config();
 
@@ -51,22 +52,28 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/feed", feedRoutes);
-app.use("/auth", authRoutes);
-app.use((error, req, res, next) => {
-  const status = error.statusCode || 500;
-  const message = error.message;
-  const data = error.data;
-  res.status(status).json({ message: message, data: data });
-});
+app.use("/graphql", createHandler({
+schema : graphqlSchema,
+rootValue : graphqlResolver
+}))
+// app.use("/feed", feedRoutes);
+// app.use("/auth", authRoutes);
+// app.use((error, req, res, next) => {
+//   const status = error.statusCode || 500;
+//   const message = error.message;
+//   const data = error.data;
+//   res.status(status).json({ message: message, data: data });
+// });
 
 mongoose
   .connect(process.env.NODE_APP_MONGODB_URI_KEY)
   .then((result) => {
-    const server = app.listen(8080);
-    const io = require("./socket").init(server);
-    io.on("connection", (socket) => {
-      console.log("Client Connected!");
-    });
+    app.listen(8080);
+    console.log("Client Connected!");
+    // const server = app.listen(8080);
+    // const io = require("./socket").init(server);
+    // io.on("connection", (socket) => {
+    //   console.log("Client Connected!");
+    // });
   })
   .catch((err) => console.log(err));

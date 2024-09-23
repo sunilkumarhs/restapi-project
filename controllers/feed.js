@@ -171,7 +171,7 @@ exports.deletePost = async (req, res, next) => {
       throw error;
     }
     clearImage(post.imageUrl);
-    await Post.deleteOne({ _id: new mongoDb.ObjectId(postId) });
+   z;
     const user = await User.findById(req.userId);
     user.posts.pull(postId);
     await user.save();
